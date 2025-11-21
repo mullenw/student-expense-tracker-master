@@ -45,3 +45,56 @@ export default function ExpenseScreen() {
     );
     setExpenses(rows);
   };
+
+    const addExpense = async () => {
+    const amountNumber = parseFloat(amount);
+    if (isNaN(amountNumber) || amountNumber <= 0) return;
+    if (!category.trim()) return;
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    await db.runAsync(
+      "INSERT INTO expenses (amount, category, note, date) VALUES (?, ?, ?, ?);",
+      [amountNumber, category.trim(), note.trim() || null, today]
+    );
+
+    resetForm();
+    loadExpenses();
+  };
+
+  const startEditing = (expense) => {
+    setEditingId(expense.id);
+    setAmount(String(expense.amount));
+    setCategory(expense.category);
+    setNote(expense.note || "");
+  };
+
+  const updateExpense = async () => {
+    const amountNumber = parseFloat(amount);
+    if (isNaN(amountNumber) || amountNumber <= 0) return;
+    if (!category.trim()) return;
+
+    await db.runAsync(
+      "UPDATE expenses SET amount = ?, category = ?, note = ? WHERE id = ?;",
+      [amountNumber, category.trim(), note.trim() || null, editingId]
+    );
+
+    cancelEditing();
+    loadExpenses();
+  };
+
+  const deleteExpense = async (id) => {
+    await db.runAsync("DELETE FROM expenses WHERE id = ?;", [id]);
+    loadExpenses();
+  };
+
+  const resetForm = () => {
+    setAmount("");
+    setCategory("");
+    setNote("");
+  };
+
+  const cancelEditing = () => {
+    resetForm();
+    setEditingId(null);
+  };
