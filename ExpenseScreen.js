@@ -32,156 +32,112 @@ export default function ExpenseScreen() {
           date TEXT NOT NULL
         );
       `);
-
       loadExpenses();
     }
-
     setup();
   }, []);
 
   const loadExpenses = async () => {
-    const rows = await db.getAllAsync(
-      "SELECT * FROM expenses ORDER BY id DESC;"
-    );
+    const rows = await db.getAllAsync("SELECT * FROM expenses ORDER BY id DESC;");
     setExpenses(rows);
   };
 
-    const addExpense = async () => {
-    const amountNumber = parseFloat(amount);
-    if (isNaN(amountNumber) || amountNumber <= 0) return;
-    if (!category.trim()) return;
-
-    const today = new Date().toISOString().slice(0, 10);
-
-    await db.runAsync(
-      "INSERT INTO expenses (amount, category, note, date) VALUES (?, ?, ?, ?);",
-      [amountNumber, category.trim(), note.trim() || null, today]
-    );
-
-    resetForm();
-    loadExpenses();
-  };
-
-  const startEditing = (expense) => {
-    setEditingId(expense.id);
-    setAmount(String(expense.amount));
-    setCategory(expense.category);
-    setNote(expense.note || "");
-  };
-
-  const updateExpense = async () => {
-    const amountNumber = parseFloat(amount);
-    if (isNaN(amountNumber) || amountNumber <= 0) return;
-    if (!category.trim()) return;
-
-    await db.runAsync(
-      "UPDATE expenses SET amount = ?, category = ?, note = ? WHERE id = ?;",
-      [amountNumber, category.trim(), note.trim() || null, editingId]
-    );
-
-    cancelEditing();
-    loadExpenses();
-  };
-
-  const deleteExpense = async (id) => {
-    await db.runAsync("DELETE FROM expenses WHERE id = ?;", [id]);
-    loadExpenses();
-  };
-
-  const resetForm = () => {
+  const reset = () => {
     setAmount("");
     setCategory("");
     setNote("");
-  };
-
-  const cancelEditing = () => {
-    resetForm();
     setEditingId(null);
   };
 
-    const today = new Date();
-  const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - today.getDay());
+  const submit = async () => {
+    const val = parseFloat(amount);
+    if (isNaN(val) || val <= 0 || !category.trim()) return;
 
-  const filteredExpenses = expenses.filter((exp) => {
-    const d = new Date(exp.date);
-
-    if (filter === "WEEK") {
-      return d >= startOfWeek;
-    }
-
-    if (filter === "MONTH") {
-      return (
-        d.getMonth() === today.getMonth() &&
-        d.getFullYear() === today.getFullYear()
+    if (editingId) {
+      await db.runAsync(
+        "UPDATE expenses SET amount=?, category=?, note=? WHERE id=?;",
+        [val, category.trim(), note.trim() || null, editingId]
+      );
+    } else {
+      const today = new Date().toISOString().slice(0, 10);
+      await db.runAsync(
+        "INSERT INTO expenses (amount, category, note, date) VALUES (?, ?, ?, ?);",
+        [val, category.trim(), note.trim() || null, today]
       );
     }
 
+    reset();
+    loadExpenses();
+  };
+
+  const remove = async (id) => {
+    await db.runAsync("DELETE FROM expenses WHERE id=?;", [id]);
+    loadExpenses();
+  };
+
+  const startEdit = (e) => {
+    setEditingId(e.id);
+    setAmount(String(e.amount));
+    setCategory(e.category);
+    setNote(e.note || "");
+  };
+
+  const today = new Date();
+  const startWeek = new Date(today);
+  startWeek.setDate(today.getDate() - today.getDay());
+
+  const filtered = expenses.filter((e) => {
+    const d = new Date(e.date);
+    if (filter === "WEEK") return d >= startWeek;
+    if (filter === "MONTH")
+      return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
     return true;
   });
 
-  const total = filteredExpenses.reduce(
-    (sum, exp) => sum + Number(exp.amount),
-    0
-  );
+  const total = filtered.reduce((sum, e) => sum + Number(e.amount), 0);
 
-  const categoryTotals = {};
-  filteredExpenses.forEach((exp) => {
-    if (!categoryTotals[exp.category]) categoryTotals[exp.category] = 0;
-    categoryTotals[exp.category] += Number(exp.amount);
-  });
+  const catTotals = filtered.reduce((acc, e) => {
+    acc[e.category] = (acc[e.category] || 0) + Number(e.amount);
+    return acc;
+  }, {});
 
-    const renderExpense = ({ item }) => (
-    <View style={styles.expenseRow}>
+  const renderItem = ({ item }) => (
+    <View style={styles.row}>
       <View style={{ flex: 1 }}>
-        <Text style={styles.expenseAmount}>${item.amount.toFixed(2)}</Text>
-        <Text style={styles.expenseCategory}>{item.category}</Text>
-        <Text style={styles.expenseDate}>{item.date}</Text>
-        {item.note ? <Text style={styles.expenseNote}>{item.note}</Text> : null}
+        <Text style={styles.amount}>${item.amount.toFixed(2)}</Text>
+        <Text style={styles.category}>{item.category}</Text>
+        <Text style={styles.date}>{item.date}</Text>
+        {item.note ? <Text style={styles.note}>{item.note}</Text> : null}
       </View>
 
       <View>
-        <TouchableOpacity onPress={() => startEditing(item)}>
+        <TouchableOpacity onPress={() => startEdit(item)}>
           <Text style={styles.edit}>Edit</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => deleteExpense(item.id)}>
+        <TouchableOpacity onPress={() => remove(item.id)}>
           <Text style={styles.delete}>✕</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 
-  const handleSubmit = () => {
-    if (editingId) updateExpense();
-    else addExpense();
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.heading}>Student Expense Tracker</Text>
 
       <View style={styles.filterRow}>
-        {["ALL", "WEEK", "MONTH"].map((f) => (
+        {[
+          ["ALL", "All"],
+          ["WEEK", "This Week"],
+          ["MONTH", "This Month"],
+        ].map(([key, label]) => (
           <TouchableOpacity
-            key={f}
-            style={[
-              styles.filterButton,
-              filter === f && styles.filterButtonActive,
-            ]}
-            onPress={() => setFilter(f)}
+            key={key}
+            onPress={() => setFilter(key)}
+            style={[styles.filterBtn, filter === key && styles.filterActive]}
           >
-            <Text
-              style={[
-                styles.filterText,
-                filter === f && styles.filterTextActive,
-              ]}
-            >
-              {f === "ALL"
-                ? "All"
-                : f === "WEEK"
-                ? "This Week"
-                : "This Month"}
+            <Text style={[styles.filterText, filter === key && styles.filterTextActive]}>
+              {label}
             </Text>
           </TouchableOpacity>
         ))}
@@ -191,12 +147,12 @@ export default function ExpenseScreen() {
         <Text style={styles.summaryTitle}>Total Spending</Text>
         <Text style={styles.summaryAmount}>${total.toFixed(2)}</Text>
 
-        <Text style={styles.summarySubtitle}>By Category</Text>
-        {Object.keys(categoryTotals).length === 0 ? (
-          <Text style={styles.summaryEmpty}>No expenses here.</Text>
+        <Text style={styles.summarySub}>By Category</Text>
+        {Object.keys(catTotals).length === 0 ? (
+          <Text style={styles.empty}>No expenses here.</Text>
         ) : (
-          Object.entries(categoryTotals).map(([cat, amt]) => (
-            <Text key={cat} style={styles.summaryCategory}>
+          Object.entries(catTotals).map(([cat, amt]) => (
+            <Text key={cat} style={styles.summaryCat}>
               {cat}: ${amt.toFixed(2)}
             </Text>
           ))
@@ -227,28 +183,21 @@ export default function ExpenseScreen() {
           onChangeText={setNote}
         />
 
-        <Button
-          title={editingId ? "Save Changes" : "Add Expense"}
-          onPress={handleSubmit}
-        />
+        <Button title={editingId ? "Save Changes" : "Add Expense"} onPress={submit} />
 
         {editingId && (
-          <TouchableOpacity onPress={cancelEditing}>
-            <Text style={styles.cancelEdit}>Cancel Editing</Text>
+          <TouchableOpacity onPress={reset}>
+            <Text style={styles.cancel}>Cancel Editing</Text>
           </TouchableOpacity>
         )}
       </View>
 
       <FlatList
-        data={filteredExpenses}
+        data={filtered}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={renderExpense}
-        ListEmptyComponent={
-          <Text style={styles.empty}>No expenses found.</Text>
-        }
+        renderItem={renderItem}
+        ListEmptyComponent={<Text style={styles.empty}>No expenses found.</Text>}
       />
-
-      <Text style={styles.footer}>Saved locally with SQLite</Text>
     </SafeAreaView>
   );
 }
