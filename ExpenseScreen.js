@@ -98,3 +98,35 @@ export default function ExpenseScreen() {
     resetForm();
     setEditingId(null);
   };
+
+    const today = new Date();
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+
+  const filteredExpenses = expenses.filter((exp) => {
+    const d = new Date(exp.date);
+
+    if (filter === "WEEK") {
+      return d >= startOfWeek;
+    }
+
+    if (filter === "MONTH") {
+      return (
+        d.getMonth() === today.getMonth() &&
+        d.getFullYear() === today.getFullYear()
+      );
+    }
+
+    return true;
+  });
+
+  const total = filteredExpenses.reduce(
+    (sum, exp) => sum + Number(exp.amount),
+    0
+  );
+
+  const categoryTotals = {};
+  filteredExpenses.forEach((exp) => {
+    if (!categoryTotals[exp.category]) categoryTotals[exp.category] = 0;
+    categoryTotals[exp.category] += Number(exp.amount);
+  });
