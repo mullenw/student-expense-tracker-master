@@ -201,3 +201,60 @@ export default function ExpenseScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 16, backgroundColor: "#111827" },
+  heading: { fontSize: 24, fontWeight: "700", color: "#fff", marginBottom: 16 },
+
+  filterRow: { flexDirection: "row", marginBottom: 12 },
+  filterBtn: {
+    flex: 1,
+    padding: 8,
+    marginHorizontal: 4,
+    borderRadius: 50,
+    borderWidth: 1,
+    borderColor: "#4b5563",
+    alignItems: "center",
+  },
+  filterActive: { backgroundColor: "#2563eb", borderColor: "#2563eb" },
+  filterText: { color: "#e5e7eb", fontSize: 12 },
+  filterTextActive: { color: "#fff" },
+
+  summary: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: "#1f2937",
+    marginBottom: 16,
+  },
+  summaryTitle: { color: "#e5e7eb", fontSize: 14 },
+  summaryAmount: { color: "#fbbf24", fontSize: 22, fontWeight: "700" },
+  summarySub: { color: "#9ca3af", fontSize: 12, marginTop: 6 },
+  summaryCat: { color: "#d1d5db", fontSize: 12 },
+
+  form: { marginBottom: 16, gap: 8 },
+  input: {
+    padding: 10,
+    backgroundColor: "#1f2937",
+    color: "#fff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#374151",
+  },
+  cancel: { color: "#f97316", marginTop: 8, textAlign: "center" },
+
+  row: {
+    flexDirection: "row",
+    padding: 12,
+    backgroundColor: "#1f2937",
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  amount: { color: "#fbbf24", fontSize: 18, fontWeight: "700" },
+  category: { color: "#e5e7eb", fontSize: 14 },
+  date: { color: "#9ca3af", fontSize: 11 },
+  note: { color: "#9ca3af", fontSize: 12 },
+  edit: { color: "#60a5fa", marginBottom: 8 },
+  delete: { color: "#ef4444", fontSize: 20 },
+
+  empty: { color: "#9ca3af", textAlign: "center", marginTop: 20 },
+});
