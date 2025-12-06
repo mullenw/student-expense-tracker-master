@@ -12,6 +12,9 @@ import {
 import { useSQLiteContext } from 'expo-sqlite';
 import { VictoryBar, VictoryChart, VictoryAxis } from 'victory-native';
 
+// Guard so we don't try to render undefined components
+const HAS_VICTORY = !!(VictoryBar && VictoryChart && VictoryAxis);
+
 export default function ExpenseScreen() {
   const db = useSQLiteContext();
 
@@ -174,9 +177,10 @@ export default function ExpenseScreen() {
 
         <View style={styles.chartContainer}>
           <Text style={styles.chartTitle}>Spending by Category</Text>
+
           {chartData.length === 0 ? (
             <Text style={styles.chartEmpty}>Add expenses to see the chart.</Text>
-          ) : (
+          ) : HAS_VICTORY ? (
             <VictoryChart domainPadding={{ x: 30, y: 20 }}>
               <VictoryAxis
                 style={{
@@ -204,6 +208,10 @@ export default function ExpenseScreen() {
                 }}
               />
             </VictoryChart>
+          ) : (
+            <Text style={styles.chartEmpty}>
+              Chart library not available – expenses still tracked below.
+            </Text>
           )}
         </View>
 
