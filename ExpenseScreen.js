@@ -39,7 +39,9 @@ export default function ExpenseScreen() {
   }, []);
 
   const loadExpenses = async () => {
-    const rows = await db.getAllAsync('SELECT * FROM expenses ORDER BY id DESC;');
+    const rows = await db.getAllAsync(
+      'SELECT * FROM expenses ORDER BY id DESC;'
+    );
     setExpenses(rows);
   };
 
@@ -91,7 +93,10 @@ export default function ExpenseScreen() {
     const d = new Date(e.date);
     if (filter === 'WEEK') return d >= startWeek;
     if (filter === 'MONTH')
-      return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+      return (
+        d.getMonth() === today.getMonth() &&
+        d.getFullYear() === today.getFullYear()
+      );
     return true;
   });
 
@@ -151,7 +156,12 @@ export default function ExpenseScreen() {
             onPress={() => setFilter(key)}
             style={[styles.filterBtn, filter === key && styles.filterActive]}
           >
-            <Text style={[styles.filterText, filter === key && styles.filterTextActive]}>
+            <Text
+              style={[
+                styles.filterText,
+                filter === key && styles.filterTextActive,
+              ]}
+            >
               {label}
             </Text>
           </TouchableOpacity>
@@ -233,7 +243,10 @@ export default function ExpenseScreen() {
           onChangeText={setNote}
         />
 
-        <Button title={editingId ? 'Save Changes' : 'Add Expense'} onPress={submit} />
+        <Button
+          title={editingId ? 'Save Changes' : 'Add Expense'}
+          onPress={submit}
+        />
 
         {editingId && (
           <TouchableOpacity onPress={reset}>
@@ -246,7 +259,9 @@ export default function ExpenseScreen() {
         data={filtered}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.empty}>No expenses found.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.empty}>No expenses found.</Text>
+        }
       />
     </SafeAreaView>
   );
