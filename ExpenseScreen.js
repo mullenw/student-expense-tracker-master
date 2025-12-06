@@ -10,10 +10,10 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
-import { VictoryBar, VictoryChart, VictoryAxis } from 'victory-native';
+import { VictoryBar, VictoryChart } from 'victory-native';
 
-// Guard so we don't try to render undefined components
-const HAS_VICTORY = !!(VictoryBar && VictoryChart && VictoryAxis);
+// Only check for VictoryChart and VictoryBar
+const HAS_VICTORY = !!(VictoryBar && VictoryChart);
 
 export default function ExpenseScreen() {
   const db = useSQLiteContext();
@@ -182,25 +182,6 @@ export default function ExpenseScreen() {
             <Text style={styles.chartEmpty}>Add expenses to see the chart.</Text>
           ) : HAS_VICTORY ? (
             <VictoryChart domainPadding={{ x: 30, y: 20 }}>
-              <VictoryAxis
-                style={{
-                  tickLabels: {
-                    angle: -30,
-                    fontSize: 10,
-                    padding: 15,
-                    fill: '#e5e7eb',
-                  },
-                  axis: { stroke: '#9ca3af' },
-                }}
-              />
-              <VictoryAxis
-                dependentAxis
-                style={{
-                  tickLabels: { fontSize: 10, fill: '#e5e7eb' },
-                  axis: { stroke: '#9ca3af' },
-                  grid: { stroke: '#374151' },
-                }}
-              />
               <VictoryBar
                 data={chartData}
                 style={{
