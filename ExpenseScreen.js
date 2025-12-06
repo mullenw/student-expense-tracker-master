@@ -10,7 +10,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
-import { VictoryBar, VictoryChart, VictoryAxis, VictoryTheme } from 'victory-native';
+import { VictoryBar, VictoryChart, VictoryAxis } from 'victory-native';
 
 export default function ExpenseScreen() {
   const db = useSQLiteContext();
@@ -167,10 +167,7 @@ export default function ExpenseScreen() {
           {chartData.length === 0 ? (
             <Text style={styles.chartEmpty}>Add expenses to see the chart.</Text>
           ) : (
-            <VictoryChart
-              theme={VictoryTheme.material}
-              domainPadding={{ x: 30, y: 20 }}
-            >
+            <VictoryChart domainPadding={{ x: 30, y: 20 }}>
               <VictoryAxis
                 style={{
                   tickLabels: {
