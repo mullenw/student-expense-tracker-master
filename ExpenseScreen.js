@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -8,18 +8,19 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-} from "react-native";
-import { useSQLiteContext } from "expo-sqlite";
+} from 'react-native';
+import { useSQLiteContext } from 'expo-sqlite';
+import { VictoryBar, VictoryChart, VictoryAxis, VictoryTheme } from 'victory-native';
 
 export default function ExpenseScreen() {
   const db = useSQLiteContext();
 
   const [expenses, setExpenses] = useState([]);
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("");
-  const [note, setNote] = useState("");
+  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('');
+  const [note, setNote] = useState('');
   const [editingId, setEditingId] = useState(null);
-  const [filter, setFilter] = useState("ALL");
+  const [filter, setFilter] = useState('ALL');
 
   useEffect(() => {
     async function setup() {
@@ -38,14 +39,14 @@ export default function ExpenseScreen() {
   }, []);
 
   const loadExpenses = async () => {
-    const rows = await db.getAllAsync("SELECT * FROM expenses ORDER BY id DESC;");
+    const rows = await db.getAllAsync('SELECT * FROM expenses ORDER BY id DESC;');
     setExpenses(rows);
   };
 
   const reset = () => {
-    setAmount("");
-    setCategory("");
-    setNote("");
+    setAmount('');
+    setCategory('');
+    setNote('');
     setEditingId(null);
   };
 
@@ -55,13 +56,13 @@ export default function ExpenseScreen() {
 
     if (editingId) {
       await db.runAsync(
-        "UPDATE expenses SET amount=?, category=?, note=? WHERE id=?;",
+        'UPDATE expenses SET amount=?, category=?, note=? WHERE id=?;',
         [val, category.trim(), note.trim() || null, editingId]
       );
     } else {
       const today = new Date().toISOString().slice(0, 10);
       await db.runAsync(
-        "INSERT INTO expenses (amount, category, note, date) VALUES (?, ?, ?, ?);",
+        'INSERT INTO expenses (amount, category, note, date) VALUES (?, ?, ?, ?);',
         [val, category.trim(), note.trim() || null, today]
       );
     }
@@ -71,7 +72,7 @@ export default function ExpenseScreen() {
   };
 
   const remove = async (id) => {
-    await db.runAsync("DELETE FROM expenses WHERE id=?;", [id]);
+    await db.runAsync('DELETE FROM expenses WHERE id=?;', [id]);
     loadExpenses();
   };
 
@@ -79,7 +80,7 @@ export default function ExpenseScreen() {
     setEditingId(e.id);
     setAmount(String(e.amount));
     setCategory(e.category);
-    setNote(e.note || "");
+    setNote(e.note || '');
   };
 
   const today = new Date();
@@ -88,8 +89,8 @@ export default function ExpenseScreen() {
 
   const filtered = expenses.filter((e) => {
     const d = new Date(e.date);
-    if (filter === "WEEK") return d >= startWeek;
-    if (filter === "MONTH")
+    if (filter === 'WEEK') return d >= startWeek;
+    if (filter === 'MONTH')
       return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
     return true;
   });
@@ -100,6 +101,20 @@ export default function ExpenseScreen() {
     acc[e.category] = (acc[e.category] || 0) + Number(e.amount);
     return acc;
   }, {});
+
+  const chartData = useMemo(() => {
+    const totalsByCategory = filtered.reduce((acc, e) => {
+      const cat = e.category || 'Other';
+      const amt = Number(e.amount) || 0;
+      acc[cat] = (acc[cat] || 0) + amt;
+      return acc;
+    }, {});
+
+    return Object.keys(totalsByCategory).map((cat) => ({
+      x: cat,
+      y: totalsByCategory[cat],
+    }));
+  }, [filtered]);
 
   const renderItem = ({ item }) => (
     <View style={styles.row}>
@@ -127,9 +142,9 @@ export default function ExpenseScreen() {
 
       <View style={styles.filterRow}>
         {[
-          ["ALL", "All"],
-          ["WEEK", "This Week"],
-          ["MONTH", "This Month"],
+          ['ALL', 'All'],
+          ['WEEK', 'This Week'],
+          ['MONTH', 'This Month'],
         ].map(([key, label]) => (
           <TouchableOpacity
             key={key}
@@ -146,6 +161,44 @@ export default function ExpenseScreen() {
       <View style={styles.summary}>
         <Text style={styles.summaryTitle}>Total Spending</Text>
         <Text style={styles.summaryAmount}>${total.toFixed(2)}</Text>
+
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartTitle}>Spending by Category</Text>
+          {chartData.length === 0 ? (
+            <Text style={styles.chartEmpty}>Add expenses to see the chart.</Text>
+          ) : (
+            <VictoryChart
+              theme={VictoryTheme.material}
+              domainPadding={{ x: 30, y: 20 }}
+            >
+              <VictoryAxis
+                style={{
+                  tickLabels: {
+                    angle: -30,
+                    fontSize: 10,
+                    padding: 15,
+                    fill: '#e5e7eb',
+                  },
+                  axis: { stroke: '#9ca3af' },
+                }}
+              />
+              <VictoryAxis
+                dependentAxis
+                style={{
+                  tickLabels: { fontSize: 10, fill: '#e5e7eb' },
+                  axis: { stroke: '#9ca3af' },
+                  grid: { stroke: '#374151' },
+                }}
+              />
+              <VictoryBar
+                data={chartData}
+                style={{
+                  data: { fill: '#60a5fa' },
+                }}
+              />
+            </VictoryChart>
+          )}
+        </View>
 
         <Text style={styles.summarySub}>By Category</Text>
         {Object.keys(catTotals).length === 0 ? (
@@ -183,7 +236,7 @@ export default function ExpenseScreen() {
           onChangeText={setNote}
         />
 
-        <Button title={editingId ? "Save Changes" : "Add Expense"} onPress={submit} />
+        <Button title={editingId ? 'Save Changes' : 'Add Expense'} onPress={submit} />
 
         {editingId && (
           <TouchableOpacity onPress={reset}>
@@ -203,58 +256,76 @@ export default function ExpenseScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#111827" },
-  heading: { fontSize: 24, fontWeight: "700", color: "#fff", marginBottom: 16 },
+  container: { flex: 1, padding: 16, backgroundColor: '#111827' },
+  heading: { fontSize: 24, fontWeight: '700', color: '#fff', marginBottom: 16 },
 
-  filterRow: { flexDirection: "row", marginBottom: 12 },
+  filterRow: { flexDirection: 'row', marginBottom: 12 },
   filterBtn: {
     flex: 1,
     padding: 8,
     marginHorizontal: 4,
     borderRadius: 50,
     borderWidth: 1,
-    borderColor: "#4b5563",
-    alignItems: "center",
+    borderColor: '#4b5563',
+    alignItems: 'center',
   },
-  filterActive: { backgroundColor: "#2563eb", borderColor: "#2563eb" },
-  filterText: { color: "#e5e7eb", fontSize: 12 },
-  filterTextActive: { color: "#fff" },
+  filterActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  filterText: { color: '#e5e7eb', fontSize: 12 },
+  filterTextActive: { color: '#fff' },
 
   summary: {
     padding: 12,
     borderRadius: 8,
-    backgroundColor: "#1f2937",
+    backgroundColor: '#1f2937',
     marginBottom: 16,
   },
-  summaryTitle: { color: "#e5e7eb", fontSize: 14 },
-  summaryAmount: { color: "#fbbf24", fontSize: 22, fontWeight: "700" },
-  summarySub: { color: "#9ca3af", fontSize: 12, marginTop: 6 },
-  summaryCat: { color: "#d1d5db", fontSize: 12 },
+  summaryTitle: { color: '#e5e7eb', fontSize: 14 },
+  summaryAmount: { color: '#fbbf24', fontSize: 22, fontWeight: '700' },
+  summarySub: { color: '#9ca3af', fontSize: 12, marginTop: 6 },
+  summaryCat: { color: '#d1d5db', fontSize: 12 },
+
+  chartContainer: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  chartTitle: {
+    color: '#e5e7eb',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  chartEmpty: {
+    color: '#9ca3af',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 8,
+  },
 
   form: { marginBottom: 16, gap: 8 },
   input: {
     padding: 10,
-    backgroundColor: "#1f2937",
-    color: "#fff",
+    backgroundColor: '#1f2937',
+    color: '#fff',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#374151",
+    borderColor: '#374151',
   },
-  cancel: { color: "#f97316", marginTop: 8, textAlign: "center" },
+  cancel: { color: '#f97316', marginTop: 8, textAlign: 'center' },
 
   row: {
-    flexDirection: "row",
+    flexDirection: 'row',
     padding: 12,
-    backgroundColor: "#1f2937",
+    backgroundColor: '#1f2937',
     borderRadius: 8,
     marginBottom: 8,
   },
-  amount: { color: "#fbbf24", fontSize: 18, fontWeight: "700" },
-  category: { color: "#e5e7eb", fontSize: 14 },
-  date: { color: "#9ca3af", fontSize: 11 },
-  note: { color: "#9ca3af", fontSize: 12 },
-  edit: { color: "#60a5fa", marginBottom: 8 },
-  delete: { color: "#ef4444", fontSize: 20 },
+  amount: { color: '#fbbf24', fontSize: 18, fontWeight: '700' },
+  category: { color: '#e5e7eb', fontSize: 14 },
+  date: { color: '#9ca3af', fontSize: 11 },
+  note: { color: '#9ca3af', fontSize: 12 },
+  edit: { color: '#60a5fa', marginBottom: 8 },
+  delete: { color: '#ef4444', fontSize: 20 },
 
-  empty: { color: "#9ca3af", textAlign: "center", marginTop: 20 },
+  empty: { color: '#9ca3af', textAlign: 'center', marginTop: 20 },
 });
