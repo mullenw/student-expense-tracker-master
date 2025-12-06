@@ -10,7 +10,10 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
-import { VictoryBar, VictoryChart } from 'victory-native';
+import * as VictoryNative from 'victory-native';
+
+const { VictoryBar, VictoryChart } = VictoryNative;
+
 
 export default function ExpenseScreen() {
   const db = useSQLiteContext();
