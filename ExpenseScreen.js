@@ -8,15 +8,10 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  Dimensions,
 } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
-import * as VictoryNative from 'victory-native';
-
-// Check once at module load whether the chart components exist
-const hasVictory =
-  VictoryNative &&
-  typeof VictoryNative.VictoryChart === 'function' &&
-  typeof VictoryNative.VictoryBar === 'function';
+import { BarChart } from 'react-native-chart-kit';
 
 export default function ExpenseScreen() {
   const db = useSQLiteContext();
@@ -147,6 +142,8 @@ export default function ExpenseScreen() {
     </View>
   );
 
+  const screenWidth = Dimensions.get('window').width;
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.heading}>Student Expense Tracker</Text>
@@ -181,21 +178,42 @@ export default function ExpenseScreen() {
         <View style={styles.chartContainer}>
           <Text style={styles.chartTitle}>Spending by Category</Text>
 
-          {!hasVictory ? (
-            <Text style={styles.chartEmpty}>
-              Chart library not available — expenses still tracked below.
-            </Text>
-          ) : chartData.length === 0 ? (
-            <Text style={styles.chartEmpty}>
-              Add expenses to see the chart.
-            </Text>
+          {chartData.length === 0 ? (
+            <Text style={styles.chartEmpty}>Add expenses to see the chart.</Text>
           ) : (
-            <VictoryNative.VictoryChart domainPadding={{ x: 30, y: 20 }}>
-              <VictoryNative.VictoryBar
-                data={chartData}
-                style={{ data: { fill: '#60a5fa' } }}
-              />
-            </VictoryNative.VictoryChart>
+            <BarChart
+              data={{
+                labels: chartData.map((d) => d.x),
+                datasets: [
+                  {
+                    data: chartData.map((d) => d.y),
+                  },
+                ],
+              }}
+              width={screenWidth - 32} // 16 padding on each side
+              height={220}
+              yAxisLabel="$"
+              fromZero
+              chartConfig={{
+                backgroundColor: '#1f2937',
+                backgroundGradientFrom: '#1f2937',
+                backgroundGradientTo: '#1f2937',
+                decimalPlaces: 2,
+                color: (opacity = 1) => `rgba(96, 165, 250, ${opacity})`,
+                labelColor: (opacity = 1) =>
+                  `rgba(229, 231, 235, ${opacity})`,
+                style: {
+                  borderRadius: 8,
+                },
+                propsForBackgroundLines: {
+                  stroke: '#374151',
+                },
+              }}
+              style={{
+                marginVertical: 8,
+                borderRadius: 8,
+              }}
+            />
           )}
         </View>
 
@@ -288,7 +306,10 @@ const styles = StyleSheet.create({
   summarySub: { color: '#9ca3af', fontSize: 12, marginTop: 6 },
   summaryCat: { color: '#d1d5db', fontSize: 12 },
 
-  chartContainer: { marginTop: 8, marginBottom: 8 },
+  chartContainer: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
   chartTitle: {
     color: '#e5e7eb',
     fontSize: 14,
