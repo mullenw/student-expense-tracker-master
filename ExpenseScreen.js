@@ -12,8 +12,11 @@ import {
 import { useSQLiteContext } from 'expo-sqlite';
 import * as VictoryNative from 'victory-native';
 
-const { VictoryBar, VictoryChart } = VictoryNative;
-
+// Check once at module load whether the chart components exist
+const hasVictory =
+  VictoryNative &&
+  typeof VictoryNative.VictoryChart === 'function' &&
+  typeof VictoryNative.VictoryBar === 'function';
 
 export default function ExpenseScreen() {
   const db = useSQLiteContext();
@@ -178,17 +181,21 @@ export default function ExpenseScreen() {
         <View style={styles.chartContainer}>
           <Text style={styles.chartTitle}>Spending by Category</Text>
 
-          {chartData.length === 0 ? (
-            <Text style={styles.chartEmpty}>Add expenses to see the chart.</Text>
+          {!hasVictory ? (
+            <Text style={styles.chartEmpty}>
+              Chart library not available — expenses still tracked below.
+            </Text>
+          ) : chartData.length === 0 ? (
+            <Text style={styles.chartEmpty}>
+              Add expenses to see the chart.
+            </Text>
           ) : (
-            <VictoryChart domainPadding={{ x: 30, y: 20 }}>
-              <VictoryBar
+            <VictoryNative.VictoryChart domainPadding={{ x: 30, y: 20 }}>
+              <VictoryNative.VictoryBar
                 data={chartData}
-                style={{
-                  data: { fill: '#60a5fa' },
-                }}
+                style={{ data: { fill: '#60a5fa' } }}
               />
-            </VictoryChart>
+            </VictoryNative.VictoryChart>
           )}
         </View>
 
@@ -281,10 +288,7 @@ const styles = StyleSheet.create({
   summarySub: { color: '#9ca3af', fontSize: 12, marginTop: 6 },
   summaryCat: { color: '#d1d5db', fontSize: 12 },
 
-  chartContainer: {
-    marginTop: 8,
-    marginBottom: 8,
-  },
+  chartContainer: { marginTop: 8, marginBottom: 8 },
   chartTitle: {
     color: '#e5e7eb',
     fontSize: 14,
